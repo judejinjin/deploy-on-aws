@@ -1,0 +1,86 @@
+Exercise 3.4
+ Bookmark this page
+In this exercise, you will extend the ci-cd-pipeline and add an acceptance testing stage to it. You will create an AWS CodeBuild project to perform acceptance testing on your application code. Then you will integrate the CodeBuild project with the ci-cd-pipeline. In a subsequent exercise, you build a second pipeline to deploy to the final production environment.
+
+To begin, follow the steps below.
+
+1. Download and explore the CodeBuild build spec file.
+Download the zip file that contains the build spec for the CodeBuild acceptance tests project by running the command below.
+wget https://us-west-2-tcdev.s3.amazonaws.com/courses/AWS-100-ADD/v1.0.0/exercises/ex-acctests.zip -O ~/ex-acctests.zip
+
+Make sure you are in the ~/environment directory of your AWS Cloud9 instance by running the command below in your AWS Cloud9 terminal.
+cd ~/environment/
+
+Unzip the zip file by running the command below.
+unzip -o ~/ex-acctests.zip
+
+Open the BuildSpecs/acctests-buildspec.yml file. In the build phase of the acctests-buildspec.yml file, observe that you are getting the instance ID and IP address of the web server from the AWS CloudFormation template output. You then perform a curl homepage to the IP address to hit the homepage, and get_challenge and get_route_miles API endpoints. The output from the requests is concatenated in the acc_test_output.txt file. If these commands execute successfully, your application has been successfully deployed on the web server and has passed acceptance testing.
+2. Create a CodeBuild project for running the acceptance tests.
+In this section, you will create a CodeBuild project that refers to the acctests-buildspec.yml file. CodeBuild will create a build against the latest commit of your AWS CodeCommit repository and then run the acceptance tests against the latest commit. Follow the steps below.
+
+Sign in to the AWS Management Console as the edXDeployingUser IAM user.
+In the console, click Services, then click CodeBuild to open the CodeBuild dashboard.
+Make sure you are in the Oregon region.
+Click Create build project.
+For Project name, type AcceptanceTest
+For Source provider, select AWS CodeCommit.
+For Repository, select edx-Deploying. CodeBuild will pick up the latest commit in the CodeCommit repository.
+For Environment image, click Custom image.
+For Environment type, select Linux.
+Click Other location.
+For Other location, type amazonlinux:2017.09
+Scroll down, to the Buildspec section.
+For Buildspec name, type BuildSpecs/acctests-buildspec.yml
+Make a note of the IAM role name for the service role created by CodeBuild for this project. The role name is similar to codebuild-AcceptanceTest-service-role. You will modify the role in the next section.
+In the Artifacts section, for Type, select Amazon S3.
+For Bucket name, select the bucket you created in the previous section with the bucket name YOUR_INITIALS-tempartifacts.
+Scroll down, leave the rest of the default settings, and click Create build project.
+3. Update the IAM role for CodeBuild.
+In this section, you will update the IAM role created by CodeBuild in the previous section and add read-only access to AWS CloudFormation and Amazon EC2. AWSCloudFormationReadOnlyAccess is needed to retrieve the instance id from the CloudFormation output. AmazonEC2ReadOnlyAccess is needed to retrieve the public IP address of the web server using the instance id. Follow the steps below.
+
+In the console, click Services, then click IAM to open the IAM dashboard.
+In the left side navigation menu, click Roles.
+In the search textbox, paste the IAM role name you copied in the previous section. The IAM role name is similar to codebuild-AcceptanceTest-service-role.
+Select the codebuild-AcceptanceTest-service-role IAM role by clicking the hyperlink.
+Click Attach policy.
+In the search textbox, type EC2ReadOnly
+Check the checkbox for AmazonEC2ReadOnlyAccess to select the policy.
+In the search textbox, type CloudFormation
+Check the checkbox for AWSCloudFormationReadOnlyAccess to select the policy.
+Click Attach policy at the bottom.
+You have successfully updated the IAM service role for CodeBuild to add access to Amazon S3 and AWS CloudFormation.
+
+4. Extend the pipeline to add the acceptance tests.
+In this section, you will extend the ci-cd-pipeline to add the CodeBuild project for acceptance testing. Follow the steps below.
+
+In the console, click Services, then click CodePipeline to open the CodePipeline dashboard.
+Click the hyperlink for ci-cd-pipeline.
+To add a new stage, click Edit.
+Click the Add stage button after the Deploy stage as shown in the screenshot below. 
+
+For Stage name, type AcceptanceTest. This stage will perform the acceptance tests.
+Click Add stage.
+Inside the new AcceptanceTest stage, click Add action group.
+For Action name, type AcceptanceTest
+For Action provider, select Build > AWS CodeBuild.
+For Project name, select AcceptanceTest.
+For Input artifacts #1, select SourceArtifact.
+For Output artifact #1, type MyAppAccTests
+Click Save. Scroll to the top and click Save.
+Click Save on the prompt. You should see the AcceptanceTest stage in the pipeline.
+You have successfully extended the ci-cd-pipeline to add the acceptance testing stage.
+
+5. Push the build spec to the repository and observe the pipeline execution.
+In this section, you will push the acctests-buildspec.yml to the AWS CodeCommit repository. As soon as you push to AWS CodeCommit, the pipeline kicks off and begins executing all the stages. Follow the steps below.
+
+Add the acctests-buildspec.yml file to your local Git repository by running the command below.
+git add *
+
+Commit the file to your local Git repository by running the command below.
+git commit -m "added acctests-buildspec.yml"
+
+Push the file to the dev branch of your remote AWS CodeCommit repository by running the command below. Enter your Git credentials when prompted for your username and password.
+git push origin dev
+
+In the console, click Services, then click CodePipeline to open the CodePipeline dashboard.
+Observe the ci-cd-pipeline execute the Source, Build, Provision, Deploy, and AcceptanceTest stage with your latest commit. It should take about 8-10 minutes for the pipeline to finish execution.

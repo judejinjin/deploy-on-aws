@@ -1,0 +1,88 @@
+Exercise 1.2
+ Bookmark this page
+In this exercise, you will deploy your application to AWS Elastic Beanstalk. Let's say you are ready to demo your proof of concept application to stakeholders. With Elastic Beanstalk, you can easily deploy your web application to the AWS cloud. You just have to upload your code, and Elastic Beanstalk automatically handles the deployment, from capacity provisioning, load balancing, and automatic scaling to application health monitoring. Therefore, you can concentrate more on the business logic for your application rather than intricacies of deploying it.
+
+To begin, follow the steps below.
+
+1. Download the Elastic Beanstalk .ebextensions configurations.
+In this section, you will download the .ebextensions configurations to your AWS Cloud9 environment. These configurations contain commands and environment variables needed for Elastic Beanstalk so that the application runs successfully. Follow the steps below.
+
+Download the zip file for .ebextensions configurations by running the commands below.
+
+wget https://us-west-2-tcdev.s3.amazonaws.com/courses/AWS-100-ADD/v1.0.0/exercises/ex-beanstalk.zip -O ~/ex-beanstalk.zip
+Make sure you are in correct directory by running the command below.
+cd ~/environment
+
+Unzip the ex-beanstalk.zip file by running the command below.
+unzip -o ~/ex-beanstalk.zip
+
+To view the .ebextensions configurations you just unzipped, click the Show Hidden Files menu option as shown in the screenshot below. 
+
+You should see the /FlaskApp/.ebextensions folder in the tree view to the left side. Expand the .ebextensions folder. You should see the database schema generation script, the script to populate the database, and the .csv files containing the airports and routes data needed for the application. These are the same script files you worked with in the last exercise.
+Open the /FlaskApp/.ebextensions/populate.config file. The file contains the same commands you executed in the last exercise while setting up the application in your AWS Cloud9 instance. The file contains commands to install MySQL server on the Elastic Beanstalk instance, start the MySQL server, run the script to generate the database schema, and populate the database with the airports and routes data.
+Under the option_settings section, you will see the list of database environment variables as shown in the screenshot below. Replace REPLACE_WITH_ROOT_PASSWORD with the ElasticBeanstalk root password on your password sheet. Next REPLACE_WITH_WEB_USER_PASSWORD with the ElasticBeanstalk web_user password on your password sheet. 
+
+Save the /FlaskApp/.ebextensions/populate.config file.
+Your .ebextensions configurations are now ready to be bundled into a zip file along with your application code.
+
+2. Create the application zip bundle.
+To create the application zip bundle containing the application python files, the requirements.txt file, .ebextensions, and the templates, run the command below.
+
+cd ~/environment/FlaskApp/
+zip -r ~/eb.zip requirements.txt *.py static/ templates/ .ebextensions/
+This creates an eb.zip file with the application code and the .ebextensions configurations.
+
+To view the eb.zip file in your AWS Cloud9 environment, click the Show Home in Favorites menu option as shown below. You should see the eb.zip file in the left side tree view. 
+
+Your application zip bundle is now ready to be uploaded to Elastic Beanstalk. This zip file contains all the files you need to deploy the application to Elastic Beanstalk in the correct format. To know more about the format for creating the application bundle, see: https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/applications-sourcebundle.html
+
+To download the eb.zip file to your computer, select the eb.zip file in the tree view, right-click, and select Download.
+3. Deploy application to Elastic Beanstalk.
+Sign in to the AWS Console as the edXDeployingUser IAM user.
+In the AWS Management Console, click Services, then click Elastic Beanstalk to open the Elastic Beanstalk dashboard.
+Make sure you are in the Oregon region.
+Click Create New Application at the top right corner.
+If you see a banner at the top with the message - Try the new design - to opt in to the new UI design for AWS ElasticBeanstalk, click the hyperlink for Opt in now in the banner. You should see the Create a web app page open up. Follow the steps below. If you don't see a banner at the top, skip to the next step.
+For Application name, type routes-demo
+For Platform, under Preconfigured, select Python.
+For Application code, select Upload your code.
+Click Upload.
+Click Choose file and locate the eb.zip file you downloaded in the previous section.
+Click Upload at the bottom.
+Click Create application.
+If you don't see a banner at the top, it is most likely that you have already opted in to the new UI design. You should see a Create New Application pop-up. Follow the steps below.
+For Application name, type routes-demo
+Click Create.
+Click Create one now.
+For Choose an environment tier, keep the default selection: Web server environment.
+Click Select.
+For Platform, under Preconfigured, select Python.
+For Application code, select Upload your code.
+Click Upload.
+Click Choose file and locate the eb.zip file that you downloaded in the previous section.
+Click Upload at the bottom.
+Click Create environment.
+Elastic Beanstalk will now create the resources you need for the application, including an Amazon EC2 instance, Elastic IP address, and security groups. It will also deploy the application on the Amazon EC2 instance.
+
+Note: It should take about five minutes to create the Elastic Beanstalk environment and deploy the application.
+
+4. Test the application.
+Once the Elastic Beanstalk environment health status turns green, click the application domain URL as shown in the screenshot below. 
+
+You should see the application load.
+To view the Amazon EC2 instance on which Elastic Beanstalk has deployed the application, open the Amazon EC2 dashboard.
+You should see a running Amazon EC2 instance with a name like routesDemo-env. This is the instance created by Elastic Beanstalk to deploy the application.
+To see where the option_settings variables in the /FlaskApp/.ebextensions/populate.config file are mapped in the Elastic Beanstalk environment:
+Open Elastic Beanstalk.
+Click the hyperlink for routesDemo-env.
+In the left side navigation menu, click Configuration.
+Click the Modify hyperlink in the Software box.
+Scroll down to Environment Properties. You should see the database environment variables that you configured under the option_settings section in the /FlaskApp/.ebextensions/populate.config file.
+5. Delete the Elastic Beanstalk application.
+Follow the steps below to delete the application.
+
+In the AWS Management Console, click Services, then click Elastic Beanstalk to open the Elastic Beanstalk dashboard.
+Click routes-demo.
+Click Actions -> Delete application on the right side.
+Click Delete when you get a prompt.
+This will delete the Elastic Beanstalk application and the resources created for deploying the application.

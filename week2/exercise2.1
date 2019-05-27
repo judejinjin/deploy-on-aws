@@ -1,0 +1,103 @@
+Exercise 2.1
+ Bookmark this page
+In this exercise, you will create a local Git repository and commit the application code to the local repository. You will also create an AWS CodeCommit repository and sync your local repo with the remote CodeCommit repository. Then you will push the application code to the CodeCommit repository. Using an CodeCommit repository enables you to increase the speed and frequency of your development lifecycle.
+
+To begin, follow the steps below.
+
+1. Create and configure a local Git repository.
+In this section, you will initialize a local Git repository and configure it with your username and email address. Follow the steps below.
+
+Make sure you are in the home directory of your AWS Cloud9 environment by running the command below.
+cd ~/environment
+
+Initialize a Git repository in your local AWS Cloud9 environment by running the command below.
+git init
+
+Configure your user name for your local Git repository by running the command below. Replace REPLACE_WITH_USERNAME with the user name of your choice.
+git config --global user.name "REPLACE_WITH_USERNAME"
+
+Configure your email address for your local Git repository by running the command below. Replace REPLACE_WITH_EMAIL_ADDRESS with the email address of your choice.
+git config --global user.email "REPLACE_WITH_EMAIL_ADDRESS"
+
+Create a dev branch on your local Git repository by running the command below.
+git checkout -b dev
+
+Download a zip file containing a .gitignore file to your local Git repository. The .gitignore file contains a list of files you don’t want to include in the source control. By using a .gitignore file, you can avoid adding files that are not needed when you perform a checkin to your local Git repository. Run the command below to download the zip file.
+wget https://us-west-2-tcdev.s3.amazonaws.com/courses/AWS-100-ADD/v1.0.0/exercises/ex-codecommit.zip -O ~/ex-codecommit.zip
+
+Unzip the zip file by running the command below.
+unzip -o ~/ex-codecommit.zip
+
+Open the .gitignore file in the right side tree view. You should see a list of file extensions and folders. Files with these extensions and the folders listed in the .gitignore file will be ignored every time you check in to your local repository.
+2. Stage the application code files in your local Git repo.
+In this section, you will stage your application code in your local Git repository. Once the code changes are staged, you can commit the code to your local Git repository. Follow the steps below.
+
+Add the .gitignore file to your local Git repository by running the command below.
+git add .gitignore
+
+Add the application code files to your local Git repository by running the command below.
+git add .
+
+Check the status of your local Git repository by running the command below.
+git status
+
+You should see a list of application code files in green as shown in the screenshot below. 
+
+You have successfully staged your application code for a commit.
+
+3. Commit code to the local Git repo.
+To commit the staged changes to your local Git repository, run the command below.
+git commit -m "first commit of the routes application"
+
+To get a log of the actions performed on your local Git repository, run the command below.
+git log
+
+You should see a log message that says you have created a commit in your local Git repository. You have successfully committed the application code to your local Git repository.
+
+To exit out of the git log command, type q at the terminal.
+4. Create a CodeCommit repo.
+In this section, you will create a remote CodeCommit repository and sync your local repository with the remote CodeCommit repository. Follow the steps below.
+
+Sign in to your AWS Management Console as the edXDeployingUser AWS IAM user.
+In the AWS Management Console, click Services, then click CodeCommit to open the CodeCommit dashboard.
+Make sure you are in the Oregon region.
+Click Create respository.
+For Repository name, type edX-Deploying
+Click Create.
+Once the repository is created, copy the repository URL as shown in the screenshot below. 
+
+Configure your local repository with the remote CodeCommit repository by running the command below. It is usually the convention to name the remote as origin. Replace YOUR_REPO_URL with the CodeCommit repository URL you copied earlier.
+git remote add origin YOUR_REPO_URL
+
+Your local Git repository is now connected to the remote CodeCommit repository.
+
+5. Generate Git credentials.
+In this section, you will generate Git credentials for the edXDeployingUser IAM user so that you can push code to the remote CodeCommit repository. Follow the steps below.
+
+In the AWS Management Console, click Services, then click IAM to open the IAM dashboard.
+In the left side navigation menu, click Users.
+From the list of users, select the edXDeployingUser user.
+Click the Security credentials tab.
+Scroll down to the HTTPS Git credentials for AWS CodeCommit section.
+Click Generate.
+Click Download credentials to download the Git credentials. You will use these credentials every time you push any code changes to the CodeCommit repository.
+Important Be sure to safeguard your Git credentials.
+
+6. Push code to remote CodeCommit repo.
+To push the application code from your local repository to the remote CodeCommit repository, run the command below. Origin is the name of the remote destination and dev is the branch you are pushing the code to.
+git push origin dev
+
+You should see a prompt to enter the user name and password. Enter the user name and password for the Git credentials you copied earlier. As soon as you enter the credentials, the code is pushed to the CodeCommit repository.
+To check the log for local repository, run the command below.
+git log
+
+You should see a message that your local commit is in sync with the remote dev branch.
+
+To exit out of the git log command, type q at the terminal.
+To verify that your code is pushed to the CodeCommit repository, go to the CodeCommit dashboard in your AWS Management Console by clicking Services and then clicking CodeCommit.
+You should see that the edX-Deploying repository was updated a few minutes ago.
+Click the edX-Deploying repository. You should see the FlaskApp and other files from your local AWS Cloud9 environment.
+You have successfully pushed your first commit to your CodeCommit repository.
+
+Optional
+You are prompted for your Git user name and password. As you continue to work with Git, you may be prompted again. To keep from being prompted each time you try to interact with the remote repository in the future, consider installing and configuring a Git credentials manager. For example, you can run this command in the terminal to be prompted no sooner than every 15 minutes: git config credential.helper 'cache --timeout 900'. Or you can run this command to never be prompted again, although Git stores your credentials in clear text in a plain file in your home directory: git config credential.helper 'store --file ~/.git-credentials'. For more information, see: https://git-scm.com/book/en/v2/Git-Tools-Credential-Storage

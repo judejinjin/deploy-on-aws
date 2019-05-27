@@ -1,0 +1,46 @@
+Exercise 3.1
+ Bookmark this page
+In this exercise, you will provision the test environment for the application by launching an AWS CloudFormation stack. In the next exercise, you will integrate AWS CloudFormation with AWS CodePipeline to automate the provisioning of the infrastructure.
+
+To begin, follow the steps below.
+
+1. Download the AWS CloudFormation templates.
+In this section, you will download the AWS CloudFormation templates which will be used to provision the test environment for the application. You will also download a new build spec file needed for integrating AWS CloudFormation with the ci-cd-pipeline. Follow the steps below.
+
+In your AWS Cloud9 terminal, run the commands below to download the zip file containing the AWS CloudFormation templates and a new build spec file.
+
+  cd ~/environment
+  wget https://us-west-2-tcdev.s3.amazonaws.com/courses/AWS-100-ADD/v1.0.0/exercises/ex-cfn.zip -O ~/ex-cfn.zip
+Unzip the ex-cfn.zip file by running the command below.
+unzip -o ~/ex-cfn.zip
+
+You should see the Templates/edx-provision-configuration.json and Templates/edx-provision.yaml files. You should also see the BuildSpecs/prepare-buildspec.yml file.
+
+2. Push the AWS CloudFormation templates and build spec file to the repository.
+In this section, you will commit and push the files you downloaded in the previous section to the AWS CodeCommit repository. If you are familiar with CodeCommit, you may want to complete this section by using the properties below before reading the step-by-step instructions.
+
+Git add: git add * 
+Git commit: git commit -m "adding CFN to the pipeline" 
+Git push: git push origin dev 
+Note Observe the ci-cd-pipeline execute the source and build stage with your latest commit.
+
+Expand for step-by-step instructions.
+3. Launch an AWS CloudFormation stack.
+In this section, you will launch an AWS CloudFormation stack to provision the AWS resources needed to create a test environment.
+
+In your AWS Cloud9 environment, right-click the Templates/edx-provision.yaml file in the left side tree view and select Download to download the AWS CloudFormation template to your computer.
+In the AWS Management Console, click Services, then click CloudFormation to open the AWS CloudFormation dashboard.
+Make sure you are in the Oregon region.
+Click Create new stack.
+Select Upload a template to Amazon S3 option.
+Click Choose File and select the edx-provision.yaml file you just downloaded.
+Click Next.
+For Stack name, type TEST-Stack
+Important Make sure to name the stack TEST-Stack. The name is case-sensitive and subsequent steps are dependent on the name.
+The AWS CloudFormation stack will create an Amazon RDS database. You need to set a database master password which is being accepted as a stack parameter. For DBInstanceMasterPassword, type the TEST root password on your password sheet. 
+Note The password must contain 8 to 41 characters.
+Click Next.
+Skip the Options page and click Next.
+On the Review page, scroll down and select the acknowledgement: I acknowledge that AWS CloudFormation might create IAM resources
+Click Create. You should see the status of the TEST-Stack as CREATE_IN_PROGRESS. It takes about 10 minutes for the stack to complete and the status to change to CREATE_COMPLETE.
+You have successfully provisioned the test environment for the application. In the next exercise, you will extend the ci-cd-pipeline created in the previous exercise to integrate the AWS CloudFormation template into the pipeline.

@@ -1,0 +1,34 @@
+Exercise 2.3
+ Bookmark this page
+In this exercise, you will create a continuous integration and continuous deployment (CI/CD) pipeline and automate the build and unit testing process using AWS CodePipeline. By using CodePipeline, you will be able to eliminate the process of starting a build manually to build and test against the latest commit in your AWS CodeCommit repository. You will also be able to set up a CI/CD pipeline that builds, tests, and deploys your code every time there is a code change.
+
+To begin, follow the steps below.
+
+1. Create a pipeline using CodePipeline.
+Sign in to the AWS Management Console as the edXDeployingUser IAM user.
+In the console, click Services, then click CodePipeline to open the CodePipeline dashboard.
+Make sure you are in the Oregon region.
+Click Create pipeline.
+For Pipeline name, type ci-cd-pipeline
+For Service role, click New service role.
+Click Next.
+For Source provider, select AWS CodeCommit.
+For Repository name, type edX-Deploying
+For Branch name, type dev
+Click Next.
+For Build provider, select AWS CodeBuild.
+For Project name, select UnitTests.
+Click Next step.
+On the Add deploy stage screen, click Skip. To confirm this action, click Skip again.
+Click Next step.
+On the Review your pipeline page, scroll down and click Create pipeline. You should see a success message at the top.
+Within a few seconds, the ci-cd-pipeline starts executing the pipeline against the last commit in your CodeCommit repository. CodePipeline kicks off the source stage and you should see an In progress status for the source stage.
+Once the source stage completes, the build stage kicks off. It takes about 3 minutes for the build stage to successfully complete.
+To see the code changes against which the pipeline was executed, click the commit ID in the source stage as shown in the screenshot below. You should see the commit details open up in the CodeCommit dashboard. 
+
+To see the build project details of the pipeline, click the AWS CodeBuild link as shown in the screenshot below. The CodeBuild project details should open up in a new tab. 
+
+To view the code coverage and unit tests details, click the build project hyperlink in the build stage of the ci-cd-pipeline as shown in the screenshot below. 
+
+You should see the build history and details open up in a new tab of your browser. Scroll down to the Build logs section and observe the code coverage and unit tests outputs in the log details.
+You have successfully created an AWS CodePipeline and automated the build and unit testing phase of your project. In subsequent exercises, you will commit a change to your application code and observe the pipeline getting triggered automatically to build and test your code change.

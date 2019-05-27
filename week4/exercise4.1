@@ -1,0 +1,203 @@
+Exercise 4.1
+ Bookmark this page
+In this exercise, you will create a new pipeline, and then you will build and provision the final environment using AWS CodeBuild and AWS CloudFormation. Then you will deploy your application to the final environment using AWS CodeDeploy. By the end of this exercise, you will have a fully automated CI/CD pipeline that provisions and deploys your application code to the AWS infrastructure.
+
+To begin, follow the steps below.
+
+1. Download the AWS CloudFormation template for the final environment.
+In this section, you will download the AWS CloudFormation template that will be used to provision the final environment for the application. Follow the steps below.
+
+In your AWS Cloud9 terminal, run the commands below to download the zip file containing the AWS CloudFormation template.
+
+  cd ~/environment
+  wget https://us-west-2-tcdev.s3.amazonaws.com/courses/AWS-100-ADD/v1.0.0/exercises/ex-finalpipeline.zip -O ~/ex-finalpipeline.zip
+Unzip the ex-finalpipeline.zip file by running the command below.
+unzip -o ~/ex-finalpipeline.zip
+
+You should see the /Templates/edx-final.yaml file in the left side tree view.
+
+2. Push the AWS CloudFormation template to the repository.
+In this section, you will commit and push the edx-final.yaml file you downloaded in the previous section to the AWS CodeCommit repository. If you feel familiar with CodeCommit, you may want to complete this section by using the properties below before reading the step-by-step instructions.
+
+Git add: git add * 
+Git commit: git commit -m "added edx-final template" 
+Git push: git push origin dev 
+Note When prompted for your username and password, enter your Git credentials.
+
+Expand for step-by-step instructions.
+Add the edx-final.yaml file to your local Git repository by running the command below.
+git add *
+
+Commit the file to your local Git repository by running the command below.
+git commit -m "added edx-final template"
+
+Push the file to the dev branch of your remote CodeCommit repository by running the command below. Enter your Git credentials when prompted for your username and password.
+git push origin dev
+
+3. Store the database master user and web_user password in AWS Systems Manager Parameter Store.
+In this section, you will store the database master user and web_user passwords in AWS Systems Manager Parameter Store. Follow the steps below.
+
+To store the database master password, run the command below. Replace REPLACE_WITH_FINAL_DATABASE_MASTER_PASSWORD in the command below with the FINAL root password on your password sheet.
+aws ssm put-parameter --name "FINAL-DATABASE-MASTER-PASSWORD" --value 'REPLACE_WITH_FINAL_DATABASE_MASTER_PASSWORD' --type "SecureString"
+
+To store the database web_user password, run the command below. Replace REPLACE_WITH_FINAL_DATABASE_WEBUSER_PASSWORD in the command below with the FINAL web_user password on your password sheet.
+aws ssm put-parameter --name "FINAL-DATABASE-WEB-USER-PASSWORD" --value 'REPLACE_WITH_FINAL_DATABASE_WEBUSER_PASSWORD' --type "SecureString"
+
+You have successfully stored the master and the web_user passwords in AWS Systems Manager Parameter Store.
+
+4. Create a CodeBuild project.
+In this section, you will create a CodeBuild project with the BuildSpecs/prepare-buildspec.yml that you downloaded in a previous exercise. This CodeBuild project will run a command to extract the database master user and web_user password stored in AWS Systems Manager Parameter Store and pass it on to the AWS CloudFormation template. Follow the steps below.
+
+In the AWS Management Console, click Services, then click CodeBuild to open the CodeBuild dashboard.
+Make sure you are in the Oregon region.
+Click Create build project.
+For Project name, type FinalPrepare
+For Source provider, select AWS CodeCommit.
+For Repository, select edx-Deploying repository.
+For Environment image, click Custom image.
+For Environment type, select Linux.
+Click Other registry.
+For External registry URL, type amazonlinux:2017.09
+Make a note of the IAM role name. The role name is similar to codebuild-FinalPrepare-service-role. You will update the role in a subsequent section.
+Scroll down, to the Buildspec section.
+For Buildspec name, type BuildSpecs/prepare-buildspec.yml
+In the Environment section, expand Additional configuration
+To add an environment variable, scroll down to Environment variables.
+In the Name textbox, type ENV_PREFIX
+In the Value textbox, type FINAL-
+Important Make sure to type the value as shown above.
+In the Artifacts section, for Type, select Amazon S3.
+For Bucket name, select the bucket you created in the previous section with the bucket name YOUR_INITIALS-tempartifacts.
+Scroll down, leave the rest of the default settings, and click Create build project.
+5. Update the IAM role created by CodeBuild.
+In this section, you will update the IAM role created by CodeBuild to grant access to AWS Systems Manager Parameter Store to get the secrets you created earlier. Follow the steps below.
+
+In the console, click Services, then click IAM to open the IAM dashboard.
+In the left side navigation menu, click Roles.
+In the search textbox, paste the IAM role name you copied in the previous section. The IAM role name is similar to codebuild-FinalPrepare-service-role.
+Select the codebuild-FinalPrepare-service-role IAM role.
+Click Add inline policy on the right.
+Click the JSON tab.
+In the editor, replace the IAM policy with policy below.
+
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+        "Effect": "Allow",
+        "Action": [
+            "ssm:GetParameter"
+        ],
+        "Resource": "*"
+    }
+  ]
+}
+Click Review policy.
+For Name, type prepare-secrets
+Click Create policy.
+You have successfully modified the CodeBuild role to grant access to AWS SSM Parameter Store.
+
+6. Create a final environment branch.
+In this section, you will create a new Git branch in your CodeCommit repository. A new branch will be used to track the commits ready to be deployed to your final environment. Follow the steps below.
+
+Make sure you are in the home directory of your AWS Cloud9 environment by running the command below.
+cd ~/environment
+
+Create a new branch named final in your Git repository in your local AWS Cloud9 environment by running the command below.
+git checkout -b final
+
+Push the final branch to your Git remote named origin by running the command below.
+git push origin final
+
+View the state of your Git repository by running the command below.
+git log
+
+Note that your most recent commit is now in the origin/final and origin/dev branches.
+
+
+To exit out of the git log command, type q at the terminal.
+To switch back to the dev branch, run the command below.
+git checkout dev
+
+7. Create a pipeline using AWS CodePipeline.
+In this section, you will create a CodePipeline called final-pipeline. The pipeline will have stages: source, build, provision, and deploy. The source stage of the final-pipeline is the new final branch. So, the final-pipeline will pick up the most recent commit from the final branch and continue execution. You now have control over which commits get deployed to the final environment. You will return to the final-pipeline in exercise 6.1 when you commit a new feature to the dev branch, then merge the commit into the final branch. The build stage is the CodeBuild project you created in a previous section to prepare and pass on the secrets to AWS CloudFormation. You will create an action in the build stage to provision the final infrastructure by using AWS CloudFormation. In the deploy stage, AWS CodeDeploy will deploy the application to the final environment.
+
+Note that the final-pipeline is not re-running unit tests or acceptance tests. In this simple setup, you are deploying the same commits that have already passed tests in the ci-cd-pipeline. In a more complex scenario (i.e., multiple branches being merged into the final branch), you would want to ensure that the merged commits are tested in the final branch.
+
+Sign in to the console as the edXDeployingUser IAM user.
+In the console, click Services, then click CodePipeline to open the CodePipeline dashboard.
+Make sure you are in the Oregon region.
+Click Create pipeline.
+For Pipeline name, type final-pipeline
+Click Next step.
+For Source provider, select AWS CodeCommit.
+For Repository name, type edX-Deploying
+For Branch name, type final
+Click Next.
+For Build provider, select CodeBuild.
+For Project name, select FinalPrepare.
+Click Next.
+On the Add deploy stage screen, click Skip. To confirm this action, click Skip again.
+Click Next step.
+On the Review your pipeline page, scroll down and click Create pipeline. You should see a success message at the top. Since this is the first execution, the pipeline will kick off and run through the source and build stage.
+You have successfully created a final-pipeline with a source and build stage. In the subsequent sections, you will add a provision action and a deploy stage to final-pipeline.
+
+8. Add a Provision action to the Build stage of the pipeline.
+In this section, you will modify the final-pipeline you created in the previous section to add an action called Provision to the Build stage. Follow the steps below.
+
+In the console, click Services, then click CodePipeline to open the CodePipeline dashboard.
+Click the hyperlink for final-pipeline.
+Click Edit.
+Click the Edit Stage in the Build stage as shown in the screenshot below. 
+
+Click Add action group below the CodeBuild action as shown in the screenshot below. 
+
+For Action name, type Provision
+For Deployment provider, select Deploy > AWS CloudFormation.
+For Action mode, select Create or update a stack.
+For Stack name, type FINAL-Stack 
+Important Make sure to type the stack name exactly as shown above. It is case-sensitive and subsequent steps are dependent on the name.
+For Template, type BuildArtifact::Templates/edx-final.yaml
+For Template configuration, type BuildArtifact::Templates/edx-provision-configuration.json
+For Capabilities, select CAPABILITY_IAM.
+For Role name, select cloudformation-provision-role.
+For Input artifacts #1, select BuildArtifact. BuildArtifact is the output artifact from the previous action—CodeBuild.
+Click Save.
+Scroll to the top and click Save.
+At the prompt, click Save and continue. You should see the Provision action in the Build stage in the pipeline.
+To provision the final environment via the pipeline, click Release change.
+At the prompt, click Release. It will take about 11-12 minutes for the pipeline to provision the FINAL-Stack.
+After the stage successfully completes, click the Details hyperlink in the Provision action to view the FINAL-Stack provisioned by AWS CloudFormation. The details of FINAL-Stack should appear in a new tab. Expand the Resources section. You should see a list of AWS resources provisioned by AWS CloudFormation. These resources form your final environment. In the next section, you will extend the pipeline to add a deploy stage that will deploy the application to the final environment.
+9. Extend your pipeline to add the AWS CodeDeploy stage.
+In this section, you will extend the final-pipeline to add the AWS CodeDeploy stage. AWS CodeDeploy will deploy the application to the Amazon EC2 instance provisioned by AWS CloudFormation in the Provision action. Follow the steps below.
+
+In the console, click Services, then click CodePipeline to open the CodePipeline dashboard.
+Click the hyperlink for final-pipeline.
+To add a new stage, click Edit.
+Click the Stage button after the Build stage as shown in the screenshot below. 
+
+For Stage name, type Deploy
+Click Add stage.
+Click Add action group.
+For Action name, type Deploy
+For Action provider, select Deploy > AWS CodeDeploy.
+For Application name, select FINALApplication.
+For Deployment group, select FINALDeploymentGroup.
+For Input artifacts #1, select BuildArtifact.
+Click Save.
+Scroll to the top and click Save.
+Click Save on the prompt. You should see the Deploy stage in the pipeline.
+To deploy the application to the final environment via the pipeline, click Release change.
+Click Release on the prompt message. It will take about 5 minutes for AWS CodeDeploy to deploy the application to the instance.
+After the deployment successfully completes, click the Details hyperlink in the Deploy stage to view the deployment details. You should see the deployment details in a new tab.
+In the Deployment lifecycle events table, click the hyperlink for the instance ID in the table. You should see the instance details open up in a new tab.
+In the Description tab at the bottom, copy the public IP address of the instance and paste it in a browser. You should see the application load.
+You have successfully created a pipeline that builds, provisions, and deploys an application to a final environment.
+
+10. Delete the FINAL-Stack.
+The FINAL-Stack contains resources that are consuming your free tier usage. Deleting the stack now will remove all the related resources. When you next push code to the final branch in exercise 6.1, the final-pipeline will execute and create a new FINAL-Stack.
+
+In the console, click Services, then click CloudFormation to open the CloudFormation dashboard.
+Check the checkbox for FINAL-Stack.
+At the top, click Actions -> Delete Stack.
+On the prompt message, click Yes, Delete. This will delete the resources created when you launched the FINAL-Stack.

@@ -1,0 +1,124 @@
+Exercise 6.1
+ Bookmark this page
+In this exercise, you will localize the application to support Japanese language. You will make this change locally in your AWS Cloud9 environment. After you build and test the change locally, you will push the code changes to the AWS CodeCommit repository. You will observe the ci-cd-pipeline kick off and deploy your localization changes to the test environment. After you have verified the application on the test environment, you will merge the changes to the final branch of the CodeCommit repository to kick off the final-pipeline to deploy the code changes to the final environment.
+
+To begin, follow the steps below.
+
+1. Download the localization code changes to your AWS Cloud9 environment.
+To make sure you are on the dev branch, run the command below in your AWS Cloud9 terminal.
+git checkout dev
+
+To download the code changes and the database script updates for localization, run the commands below.
+
+cd ~/environment
+wget https://us-west-2-tcdev.s3.amazonaws.com/courses/AWS-100-ADD/v1.0.0/exercises/ex-ja-jp.zip -O ~/ex-ja-jp.zip
+Unzip the code changes by running the command below.
+unzip -o ~/ex-ja-jp.zip
+
+To make sure that all the requirements are installed, run the command below.
+sudo pip-3.6 install -r FlaskApp/requirements.txt
+
+2. Run the database script to populate Japanese data.
+Change the working directory to the SetupScripts folder by running the command below.
+cd SetupScripts/
+
+To populate the database with Japanese data, you will run the SetupScripts/database_populate.py Python file. Run the command below. Make sure to replace REPLACE_WITH_ROOT_PASSWORD with the Local/Cloud9 root password on your password sheet.
+PASSWORD=REPLACE_WITH_ROOT_PASSWORD python3 database_populate.py
+
+3. Run and test the code changes locally.
+To run the application code, switch to the Python3Config run configuration pane in your AWS Cloud9 environment.
+Make sure that the run configuration is pointing to the correct Python file. You should see FlaskApp/application.py in the Command textbox.
+Click the Run button at the left side in the run configuration pane at the bottom.
+You should see a message like the one below.
+Running on http://0.0.0.0:8080/
+
+Your application is now running on port 8080.
+To test the application, click Preview -> Preview Running Application on the top menu bar of the AWS Cloud9 environment. Refer to the screenshot below.
+
+You should see the application running in a small window in the AWS Cloud9 environment.
+Pop out the application in a new window by clicking the Pop-out button as shown in the screenshot below.
+
+The localized version of the application is now running in your local AWS Cloud9 environment.
+Note The previous code may still be cached. To see the new user interface, hold down the SHIFT key and refresh your browser a few times.
+
+To load the Japanese version, click the jp link at the top, as shown in the screenshot below. 
+
+4. Run static code analysis and unit tests on the application code.
+In your AWS Cloud9 terminal window, change your working directory to the FlaskApp folder by running the command below.
+
+cd ~/environment/FlaskApp
+To run the static code analysis and the unit tests for the application code, run the FlaskApp/local_build.sh script by executing the command below.
+./local_build.sh
+
+You should see a message that the code has been rated 10.00/10 and all the units tests have run and passed.
+Your localization code changes are now ready to be pushed to the CodeCommit repository.
+
+5. Push the local code changes to the repository.
+In this section, you will commit and push the files you downloaded in the first section to the CodeCommit repository. If you feel familiar with CodeCommit, you may want to complete this section by using the properties below before reading the step-by-step instructions.
+
+Git add: git add ~/environment/* 
+Git commit: git commit -m "adding japanese language update" 
+Git push: git push origin dev 
+Note When prompted for a username and password, enter your Git credentials. Observe the ci-cd-pipeline execute the stages with your latest commit.
+
+Expand for step-by-step instructions.
+6. Verify the deployed application in the test environment.
+After the ci-cd-pipeline pipeline has successfully finished executing all the stages, you will verify the deployed application in the test environment. Follow the steps below.
+
+On the ci-cd-pipeline page, scroll down to the Deploy stage and click the Details hyperlink.
+In the Deployment lifecycle events table, click the hyperlink for the instance ID in the table.
+In the Description tab at the bottom, copy the public IP address of the TEST-WebServerInstance.
+Open a browser and paste the IP address of the TEST-WebServerInstance you just copied. You should see the application load.
+Note Again, the previous code may still be cached. Hold down the SHIFT key and refresh your browser a few times to see the new user interface.
+
+To switch to Japanese language, click the jp link. Feel free to play around and test the deployed application.
+7. Release the localization changes to the final environment.
+After verifying that the localization code changes have been successfully deployed on the test web server instance, you will release the code changes to the final environment via the final-pipeline. Follow the steps below.
+
+Return to the AWS Cloud9 terminal, and merge your dev branch into your final branch.
+
+git checkout final
+git merge dev
+You are now ready to push to the final branch. Run the command below.
+
+git push origin final
+In the console, click Services, then click CodePipeline to open the CodePipeline dashboard.
+Click the hyperlink for final-pipeline.
+Note The Japanese language update you merged to the final branch is now being deployed.
+
+After the pipeline successfully completes execution, click the Details hyperlink in the Deploy stage to view the deployment details. You should see the deployment details in a new tab.
+In the Deployment lifecycle events table, click the hyperlink for the instance ID in the table.
+In the Description tab at the bottom, copy the public IP address of the instance and paste it in a browser. You should see the application load.
+Click the jp link to switch to Japanese language.
+You have successfully deployed the localization code changes to the final environment.
+
+Congratulations! You have successfully completed all the exercises in the course.
+If you want to delete the AWS resources created for this course, follow the steps below in order. All steps are performed in the AWS Management Console.
+
+Open the AWS CloudFormation dashboard and delete the stacks TEST-Stack and FINAL-Stack by selecting the stack and clicking Actions -> Delete Stack. 
+Important Make sure to wait until both the stacks are deleted before proceeding to the next step. It will take around 8-10 minutes for the stacks to be deleted.
+Open the CodePipeline dashboard and delete the pipelines ci-cd-pipeline and final-pipeline by selecting the pipeline and clicking Edit -> Delete.
+Open the CodeBuild dashboard and delete the projects UnitTests, Prepare, AcceptanceTest, and FinalPrepare by selecting the project and clicking Actions -> Delete.
+Open the Amazon SNS dashboard and delete the pipeline-notifications SNS topic by selecting the topic and clicking Actions -> Delete.
+Open the CloudWatch dashboard and delete the pipeline-notifications event rule by following the steps below.
+Click Rules in the left side navigation menu.
+Select pipeline-notifications and click Actions -> Delete.
+Click Delete on the prompt message.
+Open the CodeCommit dashboard and delete the repository edX-Deploying by following the steps below.
+Click the edX-Deploying repository hyperlink.
+In the left side navigation menu, click Settings.
+Scroll down to the bottom and click Delete repository.
+On the prompt message, type the repository name and click Delete.
+Open the Amazon S3 dashboard and delete the bucket with name similar to REPLACE_WITH_YOUR_INITIALS-tempartifacts by selecting the row for the bucket and clicking Delete bucket.
+Open the AWS Cloud9 dashboard and delete the environment DeployingOnAWS by selecting the box for the environment and clicking Delete.
+Open the IAM dashboard and delete the following roles by selecting the individual role and clicking Delete role:
+codebuild-Prepare-service-role
+cloudformation-provision-role
+codebuild-AcceptanceTest-service-role
+codebuild-UnitTests-service-role
+cwe-role-ci-cd-pipeline
+cwe-role-final-pipeline
+codebuild-FinalPrepare-service-role
+AWS-CodePipeline-Service
+lambda_elasticsearch_execution
+Open the AWS Lambda dashboard and delete the function LogsToElasticsearch_application-logs by clicking the radio button for the function and clicking Actions, Delete.

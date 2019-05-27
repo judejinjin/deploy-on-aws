@@ -1,0 +1,64 @@
+Exercise 3.3
+ Bookmark this page
+In this exercise, you will extend the ci-cd-pipeline to add a stage for deploying the application to the web server instance by using AWS CodeDeploy. In the previous exercise, you provisioned the infrastructure needed for an acceptance test environment using AWS CloudFormation. You will now deploy the application to the web server instance by integrating CodeDeploy in the CI/CD pipeline.
+
+To begin, follow the steps below.
+
+1. Download the CodeDeploy scripts.
+In your AWS Cloud9 environment, download the ex-codedeploy.zip file that contains the scripts and the appsec.yml file by running the commands below.
+
+  cd ~/environment
+  wget https://us-west-2-tcdev.s3.amazonaws.com/courses/AWS-100-ADD/v1.0.0/exercises/ex-codedeploy.zip -O ~/ex-codedeploy.zip
+Unzip the ex-codedeploy.zip file by running the command below. If you get a prompt to replace the existing files, type Y at the terminal.
+unzip -o ~/ex-codedeploy.zip
+
+You should see a folder named CodeDeploy in the left side tree view. Expand the folder. You should see the script files for creating the database schema, populating the database with data, starting and stopping the uwsgi and nginx servers, and configuring the application on the server.
+At the bottom of the tree view, open the appspec.yml file. The file must be placed in the root of the directory structure of the application's source code. The appspec.yml file has two event hooks: AfterInstall and ApplicationStop. These event hooks run the respective commands in response to the CodeDeploy lifecycle events. The commands in the event hooks tell CodeDeploy where to install the application on the instance and how to configure the application and to start and stop the server.
+2. Store a database web_user password in AWS Systems Manager Parameter Store.
+In this section, you will store a web_user password for the database in AWS Systems Manager Parameter Store. CodeDeploy needs the web_user password to configure the application on the deployment instance. Run the command below.
+
+In your AWS Cloud9 terminal, run the command below. Replace REPLACE_WITH_DATABASE_WEB_USER_PASSWORD in the command below with the TEST web_user password on your password sheet.
+aws ssm put-parameter --name "TEST-DATABASE-WEB-USER-PASSWORD" --value 'REPLACE_WITH_DATABASE_WEB_USER_PASSWORD' --type "SecureString"
+
+3. Extend your pipeline to add the CodeDeploy stage.
+In this section, you will extend the ci-cd-pipeline to add the CodeDeploy stage. CodeDeploy will deploy the application to the Amazon EC2 instance provisioned by AWS CloudFormation in the Provision stage. Follow the steps below.
+
+In the console, click Services, then click AWS CodePipeline to open the CodePipeline dashboard.
+Click the hyperlink for ci-cd-pipeline.
+To add a new stage, click Edit.
+Click the Add stage button after the Provision stage as shown in the screenshot below. 
+
+For Stage name, type Deploy
+Click Add stage.
+Inside the new Deploy stage, click Add action group.
+For Action name, type TestDeploy
+For Action provider, select Deploy > AWS CodeDeploy.
+For Application name, select TESTApplication.
+For Deployment group, select TESTDeploymentGroup.
+For Input artifacts #1, select MyAppPre.
+Click Save.
+Scroll to the top and click Save.
+Click Save on the prompt. You should see the Deploy stage in the pipeline.
+You have successfully extended the ci-cd-pipeline to add a deploy stage.
+
+4. Push the CodeDeploy scripts to AWS CodeCommit.
+In this section, you will commit and push the CodeDeploy scripts you downloaded in the first section of this exercise. As soon as you push to CodeCommit, the pipeline kicks off and begins executing all the stages. If you are familiar with CodeCommit, you may want to attempt this section by using the properties below, before reading the step-by-step instructions.
+
+Git add: git add * 
+Git commit: git commit -m "codedeploy exercise" 
+Git push: git push origin dev 
+Note Enter the Git credentials you noted in the second exercise when prompted for the username and password. Observe the ci-cd-pipeline execute the source, build, provision and deploy stage with your latest commit.
+
+Expand for step-by-step instructions.
+5. Verify the deployed application.
+After the pipeline has finished executing, you will verify that the application has been deployed on the web server instance. Follow the steps below.
+
+On the ci-cd-pipeline page, scroll down to the Deploy stage and click the hyperlink for Details as shown in the screenshot below. 
+
+You should see a new tab open up with the details of the deployment.
+In the Deployment lifecycle events table, click the instance-ID hyperlink as shown in the screenshot below. 
+
+You should see a new tab open up with the EC2 instance details.
+In the Description tab at the bottom, copy the public IP address of the TEST-WebServerInstance.
+Open a browser and paste the IP address of the TEST-WebServerInstance you just copied. You should see the application load.
+You have successfully deployed the application to a test environment via CodeDeploy and CodePipeline.

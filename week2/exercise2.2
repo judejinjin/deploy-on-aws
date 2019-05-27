@@ -1,0 +1,93 @@
+Exercise 2.2
+ Bookmark this page
+In this exercise, you will automate the unit tests running on your application via AWS CodeBuild. In the first exercise, you manually ran the local_build.sh script to unit-test the application and to do a static code analysis. As with any manual process, there is always a chance of human error negatively impacting your feature down the line. With AWS CodeBuild, you can build your code and run unit tests on the build in preconfigured build environments that contain the operating system, programming language runtime, and build tools (e.g., Apache Maven, Gradle, npm) required to complete the task.
+
+To begin, follow the steps below.
+
+1. Download and explore the buildspec.yml file.
+In this section, you will download the buildspec.yml file to your local AWS Cloud9 environment. A build spec is a collection of build commands and related settings, in YAML format, that CodeBuild uses to run a build. You can include a build spec as part of the source code. Follow the steps below.
+
+Download a zip file containing the buildspec.yml file by running the command below.
+wget https://us-west-2-tcdev.s3.amazonaws.com/courses/AWS-100-ADD/v1.0.0/exercises/ex-codebuild.zip -O ~/ex-codebuild.zip
+
+Make sure you are in the ~/environment directory of your AWS Cloud9 instance by running the command below in your AWS Cloud9 terminal.
+cd ~/environment/
+
+Unzip the zip file by running the command below.
+unzip -o ~/ex-codebuild.zip
+
+Open the /BuildSpecs/unittest-buildspec.yml file and explore it. You will notice that the buildspec.yml file contains phases. Under the install phase, CodeBuild installs the requirements needed for your application code to build. Under the build phase, notice that pylint and nosetests commands run the static code analysis and the unit tests on the build.
+2. Push the buildspec.yml file to AWS CodeCommit repository.
+In this section, you will push the buildspec.yml file to the edX-Deploying repository. If you are familiar with CodeCommit, you may want to attempt this section by using the properties below, before reading the step-by-step instructions.
+
+Git add: git add * 
+Git commit: git commit -m "added codebuild buildspec for unittests" 
+Git push: git push origin dev 
+Note When prompted for a user name and password, enter the Git credentials you noted in the second exercise.
+
+Expand for step-by-step instructions.
+To add the buildspec.yml file to your local Git repository, run the command below.
+git add *
+
+Check the status of your local Git repository by running the command below.
+git status
+
+Commit the buildspec.yml file to your local Git repository by running the command below.
+git commit -m "added codebuild buildspec for unittests"
+
+Push the buildspec.yml file to the edX-Deploying CodeCommit repository by running the command below. When prompted for the user name and password, enter the Git credentials you noted in the second exercise.
+git push origin dev
+
+Sign in to the AWS Management Console as the edXDeployingUser IAM user.
+In the console, click Services, then click CodeCommit to open the CodeCommit dashboard.
+Make sure you are in the Oregon region.
+Click the edX-Deploying repository.
+In the left side navigation menu, click Commits. You should see your latest commit in which you pushed the buildspec.yml file to the repository.
+To view the buildspec.yml file in the CodeCommit repository, click the commit ID link as shown in the screenshot below. 
+
+You have successfully pushed the buildspec.yml file to your application code base.
+
+3. Create an Amazon S3 bucket to store build artifacts.
+In this section, you will create an Amazon S3 bucket to store the temporary build artifacts that are created during the CodeBuild build. If you are familiar with Amazon S3, you may want to attempt this section by using the properties below, before reading the step-by-step instructions.
+
+Region: US West (Oregon)
+Bucket name: REPLACE_WITH_YOUR_INITIALS-tempartifacts
+Note Replace REPLACE_WITH_YOUR_INITIALS in the bucket name above with your initials to make it unique.
+
+Expand for step-by-step instructions.
+Sign in to the console as the edXDeployingUser IAM user.
+In the console, click Services, then click S3 to open the Amazon S3 dashboard.
+Click Create bucket.
+For Bucket name, type REPLACE_WITH_YOUR_INITIALS-tempartifacts
+Note Replace REPLACE_WITH_YOUR_INITIALS in the bucket name above with your initials to make it unique.
+For Region, select US West (Oregon).
+Click Create.
+4. Create a CodeBuild project and run unit tests.
+In this section, you will create a CodeBuild project which refers to the buildspec.yml file you pushed in a previous section. CodeBuild will create a build against the latest commit of your CodeCommit repository and then run unit tests and static code analysis against the latest commit. Follow the steps below.
+
+Sign in to the console as the edXDeployingUser IAM user.
+In the console, click Services, then click CodeBuild to open the CodeBuild dashboard.
+Make sure you are in the Oregon region.
+Click Create build project.
+For Project name, type UnitTests
+For Source provider, select AWS CodeCommit.
+For Repository, select edx-Deploying.
+For Environment image, click Custom image.
+For Environment type, select Linux.
+Click Other location.
+For Other location, type amazonlinux:2017.09
+Scroll down, to the Buildspec section.
+For Buildspec name, type BuildSpecs/unittest-buildspec.yml
+In the Artifacts section, for Type, select Amazon S3.
+For Bucket name, select the bucket you created in the previous section with the bucket name YOUR_INITIALS-tempartifacts.
+Scroll down, leave the rest of the default settings, and click Create build project.
+On the UnitTest build project page, click Start build.
+Scroll down, to the Source section.
+You should see the dev branch is selected.
+Scroll down and click Start build. You should see that the build is in progress.
+Scroll down to the Build logs section, after a few seconds you will see log messages for the build as shown in the screenshot below. CodeBuild will finish building and running the unit tests in a few minutes. 
+
+You can also see the pylint static analysis and the unit tests results in the logs details as shown in the screenshot below. 
+
+To view the output from the build, open the Amazon S3 dashboard and click the Amazon S3 bucket with bucket name similar to REPLACE_WITH_YOUR_INITIALS-tempartifacts. Drill down into the folders and you will see the code coverage report and the other output files from the build.
+You have successfully automated the process for building and running unit tests on your application code with CodeBuild.

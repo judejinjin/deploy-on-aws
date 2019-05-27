@@ -1,0 +1,155 @@
+Exercise 5.2
+ Bookmark this page
+In this exercise, you will configure Amazon CloudWatch Logs agent on the web server instance to which the application is deployed. In particular, you will configure Amazon CloudWatch Logs agent on the web server instance of the TEST-Stack provisioned by the ci-cd-pipeline. The web server instance already has an NGINX access.log file that logs all the web traffic to the application. To get these logs in your AWS account under Amazon CloudWatch Logs, you will configure an Amazon CloudWatch Logs agent on the instance. The agent will send the logs recorded on the web server instance to the AWS cloud.
+
+To begin, follow the steps below.
+
+1. Generate an SSH keypair.
+In this section, you will generate an SSH keypair and import the public key of the keypair to your AWS account. In the Amazon EC2 dashboard, notice that the TEST-WebServerInstance provisioned by the TEST-Stack does not have any keypair associated with it. Neither does it have a security group rule to allow SSH traffic. To configure the Amazon CloudWatch Logs agent on the TEST-WebServerInstance, you need a keypair to SSH into the instance. In this section, you will generate a keypair and import it to your AWS account. In a subsequent section, you will re-provision the TEST-WebServerInstance to add the keypair and to open up port 22 to allow SSH traffic. Follow the steps below.
+
+Create a folder called ssh-keys in your AWS Cloud9 environment. Run the command below.
+mkdir -p ~/ssh-keys
+
+Change your working directory to the ssh-keys folder by running the command below.
+cd ~/ssh-keys
+
+Generate an SSH keypair by running the command below.
+ssh-keygen -t rsa -f ~/ssh-keys/edx-temp-key -N ''
+
+At the right side, click the Show Home in Favorites menu option as shown in the screenshot below. You should see the ssh-keys folder and the two files: edx-temp-key and edx-temp-key.pub. These are the private key and the public key you generated in the previous step. 
+
+To view the contents of the private key, run the command below.
+cat edx-temp-key
+
+To protect the permissions of the private key, run the command below.
+chmod 400 edx-temp-key
+
+To view the contents of the public key, run the command below.
+cat edx-temp-key.pub
+
+To import the public key to your AWS account, run the command below. Make sure not to modify the keypair name, edx-temp-public-key, in the command below.
+aws ec2 import-key-pair --key-name edx-temp-public-key --public-key-material file://edx-temp-key.pub
+
+In the AWS Management Console, click Services, then click EC2 to open the Amazon EC2 dashboard.
+In the left side navigation menu, under NETWORK & SECURITY, click Key Pairs. You should see edx-temp-public-key you just imported.
+2. Download a zip file with an updated AWS CloudFormation template.
+In this section, you will download a zip file that contains an update to the AWS CloudFormation template: edx-provision.yaml. The AWS CloudFormation template updates the TEST-Stack to add the keypair to the TEST-WebServerInstance, add a security group rule to open up port 22 on the TEST-WebServerInstance, and add the CloudWatchLogsFullAccess IAM policy to the role used by the instance. Follow the steps below.
+
+In your AWS Cloud9 environment, download the ex-cwlogs.zip file that contains the updated edx-provision.yaml by running the commands below.
+
+    cd ~/environment
+    wget https://us-west-2-tcdev.s3.amazonaws.com/courses/AWS-100-ADD/v1.0.0/exercises/ex-cwlogs.zip -O ~/ex-cwlogs.zip
+  
+Unzip the zip file by running the command below.
+unzip -o ~/ex-cwlogs.zip
+
+Open the Templates/edx-provision.yaml file. Locate the string 'AWS::EC2::Instance' in the file. You should see the KeyName added as shown in the screenshot below. Locate the string '22' to see the port 22 security group rule added in the template. Similarly, locate 'CloudWatchLogsFullAccess' in the template to see the IAM policy added to the instance profile role. 
+
+3. Commit and push the updated template to the repository.
+In this section, you will commit and push the updated edx-provision.yaml template to the AWS CodeCommit repository. If you feel familiar with AWS CodeCommit, you may want to complete this section by using the properties below before reading the step-by-step instructions.
+
+Git add: git add * 
+Git commit: git commit -m "adding SSH capabilities to the TEST-WebServerInstance" 
+Git push: git push origin dev 
+Note When prompted for a username and password, enter your Git credentials.
+
+Expand for step-by-step instructions.
+Add the edx-final.yaml file to your local Git repository by running the command below.
+git add *
+
+Commit the file to your local Git repository by running the command below.
+git commit -m "adding SSH capabilities to the TEST-WebServerInstance"
+
+Push the file to the dev branch of your remote AWS CodeCommit repository by running the command below. Enter your Git credentials when prompted for your username and password.
+git push origin dev
+
+In the AWS Management Console, click Services, then click CodePipeline to open the CodePipeline dashboard.
+Observe the ci-cd-pipeline execute the Source, Build, Provision, Deploy, and TestBundle stage with your latest commit. It should take about 8-10 minutes for the pipeline to finish execution.
+In the console, click Services, then click CodeCommit to open the CodeCommit dashboard.
+Click the edX-Deploying repository.
+Click Commits in the left side navigation menu.
+Click the commit message as shown in the screenshot below to observe the Git diff of the AWS CloudFormation template changes you made in the last commit. 
+
+You should see the Git diff as shown in the screenshot below. 
+
+To observe the AWS CloudFormation events that are generated while AWS CloudFormation updates the TEST-Stack, open the CloudFormation dashboard.
+In the list of stacks, check the checkbox for TEST-Stack.
+Click the Events tab at the bottom. You should see the events as AWS CloudFormation updates the stack.
+After the ci-cd-pipeline has finished execution successfully, open the Amazon EC2 dashboard and click Instances on the left side navigation menu.
+You will notice that there are two instances with the name TEST-WebServerInstance. One of these instances is in the terminated state. This is because, while re-provisioning the instance, AWS CloudFormation terminated the old instance and created a new one with the keypair.
+On the Instances page, click the TEST-WebServerInstance provisioned by the TEST-Stack which is in the running state.
+In the Description tab at the bottom, observe that edx-temp-public-key is now populated against Key pair name. This means that the TEST-WebServerInstance was successfully re-provisioned by the ci-cd-pipeline, and you are now able to SSH to the instance. Make a note of the IP address of the TEST-WebServerInstance for later use.
+4. SSH in to the TEST-WebServerInstance.
+To connect to the TEST-WebServerInstance from your AWS Cloud9 terminal, run the command below. Make sure to replace REPLACE_WITH_WEBSERVER_INSTANCE_IP with the public IP address of the TEST-WebServerInstance you copied in the last section.
+ssh -i ~/ssh-keys/edx-temp-key ec2-user@REPLACE_WITH_WEBSERVER_INSTANCE_IP
+
+When you get the prompt Are you sure you want to continue connecting (yes/no)?, type yes
+You have successfully connected to the TEST-WebServerInstance via SSH.
+
+5. Observe the logs generated by the NGINX server on the TEST-WebServerInstance.
+To observe the logs generated by the NGINX server on the TEST-WebServerInstance, run the command below. The command below inspects the access.log file of the NGINX server.
+sudo tail -f /var/log/nginx/access.log
+
+For the log entries to generate, open the application in a browser and play around with the application to generate HTTP traffic. To open the application, paste the IP address of the TEST-WebServerInstance in a browser and play around with the application.
+In the AWS Cloud9 terminal, you should see log entries corresponding to the web traffic to the application. In the next section, you will configure the Amazon CloudWatch Logs agent on the instance to send the logs to your AWS account.
+6. Install and configure the Amazon CloudWatch Logs agent.
+In this section, you will install and configure the Amazon CloudWatch Logs agent. The agent will keep monitoring the instance for entries in the access.log file generated by the NGINX server. The agent will also send the logs to Amazon CloudWatch Logs. Follow the steps below.
+
+In your AWS Cloud9 terminal, press CTRL+C to exit the previous command so that you can observe the access.log file.
+Install the Amazon CloudWatch Logs agent by running the command below.
+sudo yum install -y awslogs
+
+The CloudWatch Logs agent is configured to the us-east-1 region by default. To change the region to us-west-2, run the command below.
+sudo sed 's/us-east-1/us-west-2/g' -i /etc/awslogs/awscli.conf
+
+Create a configuration file to send the NGINX server access.log entries to Amazon CloudWatch Logs by running the command below. The command will create a file called FlaskAppAccessLogs.conf at the specified location. Observe the variables log_group_name and log_stream_name in the file. The variable log_group_name has the value as FlaskApp-Frontends-access-log. This is the log group name under which the logs will be aggregated in Amazon CloudWatch Logs. The log_stream_name variable has the value as the instance_id. This means that the logs will be further grouped as per the instance ID of the instances being monitored. If you have multiple instances running and have the Amazon CloudWatch Logs agent configured on them, you will see log entries grouped as per the instance ID of each instance.
+
+sudo -s
+cat > /etc/awslogs/config/FlaskAppAccessLogs.conf <<- "EOF"
+[/var/log/nginx/access.log]
+initial_position = start_of_file
+file = /var/log/nginx/access.log
+datetime_format = %d/%b/%Y:%H:%M:%S %z
+buffer_duration = 5000
+log_group_name = FlaskApp-Frontends-access-log
+log_stream_name = {instance_id}
+EOF
+Start the Amazon CloudWatch Logs agent by running the command below.
+sudo service awslogs start
+
+You should see a message similar to below.
+Starting awslogs: [ OK ]
+
+To configure the Amazon CloudWatch Logs agent to start again on instance reboot, run the command below.
+sudo chkconfig awslogs on
+
+To verify that the Amazon CloudWatch Logs agent is running on the instance, run the command below.
+sudo service awslogs status
+
+You should see a message similar to the one below.
+awslogs (pid 12844) is running...
+
+To disconnect the SSH session with the TEST-WebServerInstance, type logout at the terminal.
+You have successfully installed and configured the Amazon CloudWatch Logs agent on the TEST-WebServerInstance.
+
+7. Verify that the logs are sent to Amazon CloudWatch Logs in your AWS account.
+In this section, you will generate some web traffic to your application by playing around with the application. This will create log entries on the instance, and the Amazon CloudWatch Logs agent will send these logs to your AWS account. Then you will verify the logs in Amazon CloudWatch Logs. Follow the steps below.
+
+Paste the IP address of the TEST-WebServerInstance in a browser and play around with the application to generate some HTTP traffic.
+In the console, click Services, then click CloudWatch to open the CloudWatch dashboard.
+In the left side navigation menu, click Logs.
+In the table, you should see a log group entry with the name FlaskApp-Frontends-access-log. This is the log group name you configured while installing the Amazon CloudWatch Logs agent in a previous section.
+Click FlaskApp-Frontends-access-log. You should see an entry with the instance ID of the TEST-WebServerInstance. The log streams for the TEST-WebServerInstance are grouped under the instance ID.
+Click the instance ID.
+You should see a list of logs corresponding to the HTTP traffic to the application.
+You are successfully sending the server logs of the TEST-WebServerInstance to your AWS account.
+
+8. Stop the TEST-WebServerInstance.
+Note If you are immediately beginning the next exercise, you may ignore this section. If not, you may want to stop the TEST-WebServerInstance and start it again when you get to the next exercise. 
+In this section, you will stop the Amazon EC2 instance by selecting the instance in the Amazon EC2 dashboard and clicking Actions -> Instance State -> Stop .
+
+Expand for step-by-step instructions.
+In the console, click Services, then click EC2 to open the Amazon EC2 dashboard.
+In the navigation pane, click Instances. In the list of instances, select the TEST-WebServerInstance instance.
+Click Actions, Instance State, Stop.
+When prompted, click Yes, Stop. The instance will stop in a few minutes.

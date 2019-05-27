@@ -1,0 +1,44 @@
+Exercise 5.1
+ Bookmark this page
+In this exercise, you will create an Amazon SNS topic and add Amazon CloudWatch events to the topic to monitor the ci-cd-pipeline. By doing so, you will get notifications when the pipeline state changes, and you will be able to immediately take action if there is a failure at any stage.
+
+To begin, follow the steps below.
+
+1. Create an Amazon SNS topic.
+In this section, you will create an Amazon SNS topic and create an email subscription to the topic.
+
+Sign in to the AWS Management Console as the edXDeployingUser IAM user.
+In the console, click Services, then click Simple Notification Service to open the Amazon SNS dashboard.
+Make sure you are still in the Oregon (us-west-2) region.
+If you are using Amazon SNS for the first time, you will see a Get started button. Click Get started.
+Click Create topic.
+For Topic name, type pipeline-notifications
+Click Create topic.
+On the Topic details: pipeline-notifications page, click Create subscription.
+For Protocol, select Email.
+For Endpoint, type your email ID. You will get a confirmation email on this email ID.
+Click Create subscription. You should get a confirmation email within a few minutes. Follow the directions in the email to confirm the subscription.
+2. Add Amazon CloudWatch Events to the Amazon SNS topic.
+In this section, you will add Amazon CloudWatch Events to the Amazon SNS topic to monitor the ci-cd-pipeline.
+
+In the console, click Services, then click CloudWatch to open the CloudWatch dashboard.
+In the left side navigation menu, click Events.
+Click Create rule.
+For Service Name, select CodePipeline.
+For Event Type, select CodePipeline Pipeline Execution State Change.
+Click Add target at the right side.
+The default target selected is Lambda function. Change the target to SNS topic.
+For Topic, select pipeline-notifications.
+Scroll down and click Configure details.
+On the Step 2: Configure rule details page, for Name, type pipeline-notifications
+Click Create rule.
+You have successfully added the Amazon CloudWatch events related to AWS CodePipeline as a target to the SNS topic. In the next section, you will trigger the execution of the ci-cd-pipeline and verify the email notifications.
+
+3. Verify the Amazon SNS topic notifications.
+In this section, you will trigger the execution of the ci-cd-pipeline and verify the email notifications. Follow the steps below.
+
+In the console, click Services, then click CodePipeline to open the CodePipeline dashboard.
+Click the hyperlink for ci-cd-pipeline.
+To trigger the pipeline execution, click Release change.
+At the prompt, click Release. The pipeline should start executing in a few seconds.
+You should get an email notification on the subscribed email ID. The email will have a JSON snippet containing the details of the ci-cd-pipeline and the current state of the pipeline. Similarly, you will get an email notification when the ci-cd-pipeline state changes to success or failure.
