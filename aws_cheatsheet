@@ -1,0 +1,135 @@
+CLI "Cheat Sheet"
+ Bookmark this page
+This cheat sheet contains a range of cli commands you'll find useful.
+
+NOTE: Some commands delete and modify configurations. Make sure you test these commands before applying to production or critical systems.
+
+You can also find much more information on using the CLI with all the AWS services at https://docs.aws.amazon.com/cli/latest/reference/#available-services or you can download or git clone the cli user guide at https://github.com/awsdocs/aws-cli-user-guide
+
+NOTE: replace sequential xxxxxxxx or between brackets <...> with actual values to run these commands.
+
+If you haven't installed the CLI before or need to update your CLI here are some links for the various flavors of OS and install methods. Here are the links to use Python Pip and for Windows installs of the CLI.
+
+https://aws.amazon.com/cli/
+
+https://docs.aws.amazon.com/cli/latest/userguide/installing.html
+
+https://docs.aws.amazon.com/cli/latest/userguide/awscli-install-windows.html
+
+AWS Credential Overview
+Let's make sure you have the CLI setup and ready for use.
+
+aws --version
+Will return something like aws-cli/1.14.20. NOTE: That some OS distros may have older CLI versions. You want to have the latest. Visit TODO to determine the latest version.
+
+local CLI files
+When using the AWS CLI two files are in use locally. Become familiar with these. You can customize the CLI and you can create additional profiles including role based profiles where you obtain elevated permissions using STS Assume Role.
+
+The benefit of using roles is keep the trust and resource policies in the account and not locally or in code. This is much better from a security perspective because using roles and STS eliminates the potential for you to embedstatic permissions in code. Don't be THAT person.
+
+/.aws/config - configures preferences for one or more profiles
+
+/.aws/credentials - contains access credentials for one or more profiles
+
+CLI Basics
+Let's start with some CLI Basics.
+
+aws help
+This help file will list the 'Available Services'. NOTE: Older CLI versions may be lacking newer services. You can confirm this by noting the absence of a new service from the 'Available Services' list. Also note that there are version dependencies with other libraries like Python, Pip and Boto.
+
+aws <servicename> help
+NOTE: The two S3 cli commands
+aws s3 help # This help file lists basic, or higher level, S3 commands aws s3api help # This help file contains the lower level S3 API commands.
+
+Many other services have these more detailed API CLI commands but aws help does not list them. Elastic Beanstalk, for example, has a dedicated CLI, syntactically 'eb' rather than 'elasticbeanstalk'. Some commands and functionality may also be deprecated from time to time. https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/eb-cli3.html
+
+Service Limits
+While not an issue for lightweight account usage all AWS Services have both service and API service limits. These limits protect you and AWS from infinite loops, excessive call frequencies and misuse. Make a point of researching these service limits. Start at the entry page summarizing AWS service limits at $https://docs.aws.amazon.com/general/latest/gr/awsservicelimits.html$ . Checkout the service limits and API limits for SNS to better understand how AWS is configured to support you and millions of other customers.
+
+CLI Deep Dive
+Let's dive a little deeper and explore some more advanced CLI features. We'll generally stick to commands that make use of the free tier.
+
+Storage
+List S3 buckets
+
+aws s3 ls s3://<bucket> # where bucket is your bucket name
+Sync from local to bucket
+
+aws s3 sync <target_folder> <bucket>
+Copy the contents of one bucket to another and set access to public NOTE: setting a bucket to public is suitable for a static website but not for important data.
+
+aws s3 cp s3://<startbucket>/<somepath>/ s3://<endbucket>/<someotherpath>/ --recursive --acl public-read-write
+Compute
+Describe the instances in a region. NOTE: The output here is json and hard to read. Even if you change the output to table the result is still hard to read.
+
+aws ec2 describe-instances --region us-east-1 --output json
+Let's use the JMESPath query language for JSON and the --query option. You can read more about JMESPath at http://jmespath.org/
+
+Describe all instances in a region, or in a specific VPC. Notice the more readable output that doesn't require us to scroll in the terminal.
+
+aws ec2 describe-instances \
+ --query 'Reservations[*].Instances[*].{Id:InstanceId,Pub:PublicIpAddress,Pri:PrivateIpAddress,State:State.Name}' \
+ --output table
+Describe all instances in a specific VPC. This is nicely formatted and easy to read thanks to JMESPath.
+
+aws ec2 describe-instances \
+ --filters Name=vpc-id,Values=vpc-72662209 \
+ --query 'Reservations[*].Instances[*].{Id:InstanceId,Pub:PublicIpAddress,Pri:PrivateIpAddress,State:State.Name}' \
+ --output table
+Autoscaling is easy to configure from the CLI. Here we'll try to stay within the free tier.
+
+aws autoscaling create-launch-configuration --launch-configuration-name acme-app-lc-3 --image-id ami-467ca739 --instance-type t2.micro
+
+aws autoscaling create-auto-scaling-group --auto-scaling-group-name acme-asg-3 --launch-configuration-name acme-app-lc-2 --max-size 2 --min-size 1 --availability-zones "us-east-1a"
+
+aws autoscaling put-scaling-policy --policy-name acme-scaleout-policy --auto-scaling-group-name acme-asg-3 --scaling-adjustment 30 --adjustment-type PercentChangeInCapacity
+
+aws autoscaling put-scaling-policy --policy-name acme-scalein-policy --auto-scaling-group-name acme-asg-3 --scaling-adjustment -2 --adjustment-type ChangeInCapacity
+
+aws cloudwatch put-metric-alarm --alarm-name AddCapacity --metric-name CPUUtilization --namespace AWS/EC2 \
+--statistic Average --period 60 --threshold 80 --comparison-operator GreaterThanOrEqualToThreshold  \
+--dimensions "Name=AutoScalingGroupName,Value=acme-asg" --evaluation-periods 2 --alarm-actions PolicyARN
+
+aws cloudwatch put-metric-alarm --alarm-name RemoveCapacity --metric-name CPUUtilization --namespace AWS/EC2 \
+--statistic Average --period 60 --threshold 40 --comparison-operator LessThanOrEqualToThreshold \
+--dimensions "Name=AutoScalingGroupName,Value=my-asg" --evaluation-periods 2 --alarm-actions PolicyARN
+Network
+Let's see how we can use the --filters parameter to retrieve details about a single resource.
+
+Describe the Default vpc in a specific region
+
+aws ec2 describe-vpcs --filters "Name=tag:Name,Values=Default" --region us-east-1 --output json
+Now let's chain CLI commands by using the output of one as input parameters of another
+
+Create a vpn gateway
+
+aws ec2 create-vpn-gateway --type ipsec.1 --region us-east-1 --output json
+Name and tag a vgw just created. Replace vgw id with one created in the above create-vpn-gateway command
+
+aws ec2 create-tags --resources vgw-xxxxxxxx --tags Key=Name,Value=Acme  --region us-east-1
+Attaching vgw to VPC. Replace vgw id and VPC id from the above commands
+
+aws ec2 attach-vpn-gateway --vpn-gateway-id vgw-xxxxxxxx --vpc-id vpc-xxxxxxxx --region us-east-1 --output json
+Now describe the vgws to see their attachment status
+
+aws ec2 describe-vpn-gateways --region us-east-1 --output json
+Let's cleanup and delete vgw we just created. First let's detach our vpn gateway. I'm also using the --dry-run flag so I can check my syntax is correct as I've cut and pasted ids.
+
+aws ec2 detach-vpn-gateway --vpc-id vpc-xxxxxxxx --vpn-gateway-id vgw-xxxxxxxx --dry-run
+Let's check that it is detached.
+
+aws ec2 describe-vpn-gateways --region us-east-1 --output json
+Now I can delete my vpn gateway.
+
+aws ec2 delete-vpn-gateway --vpn-gateway-id vgw-xxxxxxxx
+Database
+<create, snapshot, shutdown and recreate a db>
+
+Add tags to an RDS database resource
+
+add-tags-to-resource arn:aws:rds:<region>:<acctnumber>:db:<dbname> --tag Type=<tagname> --tag <tagvalue>
+Automated RDS snapshots and manual RDS snapshots are copied with a different syntax for the uri. Snapshots can only be copied FROM the source region to the CURRENT region.
+
+#####uri syntax for a snapshot
+
+arn:aws:rds:[sourceregion]:[acctnumber]:snapshot:[sourcesnapshotname]
